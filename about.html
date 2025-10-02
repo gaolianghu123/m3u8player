@@ -1,565 +1,523 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-cn">
+
 <head>
+    <title>m3u8在线播放器</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>关于我们 | 公司名称</title>
+    <meta name="description" content="M3U8Player播放器，用于m3u8文件的在线播放">
+
+    <!-- 加载外部资源 -->
+    <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/social-share.js/1.0.16/css/share.min.css">
+    <script src="https://cdn.staticfile.org/social-share.js/1.0.16/js/social-share.min.js"></script>
+    <link href="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.min.css" rel="stylesheet" />
+    <script src="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.v5.1.0.min.js"></script>
+
     <style>
-        /* 基础样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        @media screen and (max-width: 640px){
+            #player-container-id {
+                height: 200px!important;
+            }
         }
         
-        body {
-            line-height: 1.6;
-            color: #333;
-            background-color: #f9f9f9;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        /* 导航栏 */
-        header {
-            background-color: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2c3e50;
-            text-decoration: none;
-        }
-        
-        .nav-links {
-            display: flex;
-            list-style: none;
-        }
-        
-        .nav-links li {
-            margin-left: 30px;
-        }
-        
-        .nav-links a {
-            text-decoration: none;
-            color: #2c3e50;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-links a:hover {
-            color: #3498db;
-        }
-        
-        /* 页面标题 */
-        .page-header {
-            background: linear-gradient(135deg, #3498db, #2c3e50);
-            color: white;
-            padding: 80px 0;
-            text-align: center;
-            margin-bottom: 60px;
-        }
-        
-        .page-header h1 {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            opacity: 0;
-            animation: fadeIn 1s forwards;
-        }
-        
-        .page-header p {
-            font-size: 1.2rem;
-            max-width: 700px;
-            margin: 0 auto;
-            opacity: 0;
-            animation: fadeIn 1s 0.3s forwards;
-        }
-        
-        /* 主要内容区域 */
-        .section {
-            margin-bottom: 80px;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: fadeUp 0.8s forwards;
-        }
-        
-        .section:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .section:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        .section:nth-child(4) {
-            animation-delay: 0.6s;
-        }
-        
-        .section-title {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .section-title h2 {
-            font-size: 2.2rem;
-            color: #2c3e50;
-            position: relative;
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-        
-        .section-title h2:after {
-            content: '';
-            position: absolute;
-            width: 50%;
-            height: 3px;
-            background-color: #3498db;
-            bottom: 0;
-            left: 25%;
-        }
-        
-        /* 公司简介 */
-        .about-content {
-            display: flex;
-            align-items: center;
-            gap: 40px;
-        }
-        
-        .about-text {
-            flex: 1;
-        }
-        
-        .about-image {
-            flex: 1;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .about-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-            transition: transform 0.5s;
-        }
-        
-        .about-image:hover img {
-            transform: scale(1.05);
-        }
-        
-        /* 使命与愿景 */
-        .mission-vision {
-            display: flex;
-            gap: 30px;
-        }
-        
-        .mission, .vision {
-            flex: 1;
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .mission:hover, .vision:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        }
-        
-        .mission h3, .vision h3 {
-            color: #3498db;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-        
-        /* 价值观 */
-        .values {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-        
-        .value-item {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-        }
-        
-        .value-item:hover {
-            transform: translateY(-5px);
-        }
-        
-        .value-icon {
-            font-size: 2.5rem;
-            color: #3498db;
-            margin-bottom: 15px;
-        }
-        
-        .value-item h3 {
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-        
-        /* 团队介绍 */
-        .team {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-        
-        .team-member {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-        }
-        
-        .team-member:hover {
-            transform: translateY(-5px);
-        }
-        
-        .member-photo {
-            height: 250px;
-            overflow: hidden;
-        }
-        
-        .member-photo img {
+        html, body{
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s;
+            display: block;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft YaHei", sans-serif;
         }
-        
-        .team-member:hover .member-photo img {
-            transform: scale(1.1);
+
+        .hd {
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(135deg, #0e90d2 0%, #085a8c 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .member-info {
-            padding: 20px;
+
+        .hd .link-list {
+            padding: 0 16px;
+            height: 50px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: row;
+            gap: 24px;
+            align-items: center;
+            align-content: center;
+        }
+
+        .hd .link-list a {
+            font-size: 16px;
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .hd .link-list a:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .main {
+            padding: 16px 16px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            min-height: calc(100vh - 50px);
+        }
+
+        .main h1 {
             text-align: center;
+            font-size: 30px;
+            color: #0e90d2;
+            font-weight: 800;
+            margin-bottom: 24px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
-        
-        .member-info h3 {
-            margin-bottom: 5px;
-            color: #2c3e50;
+
+        .main .form {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 10px rgba(14, 144, 210, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
         }
-        
-        .member-info .position {
-            color: #3498db;
-            margin-bottom: 10px;
+
+        .main .form input {
+            flex: 1;
+            height: 50px;
+            border: 2px solid #0e90d2;
+            border-right: 0;
+            padding-left: 15px;
+            font-size: 16px;
+            border-radius: 8px 0 0 8px;
+            transition: all 0.3s ease;
+        }
+
+        .main .form input:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(14, 144, 210, 0.5);
+        }
+
+        .main .form .play-btn {
+            width: 50px;
+            height: 50px;
+            background: #0e90d2;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .main .form .play-btn:hover {
+            background: #085a8c;
+        }
+
+        .main .form .play-btn img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .player-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 24px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #player-container-id {
+            width: 100%;
+            min-height: 300px;
+            background: #000;
+        }
+
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+            display: none;
+        }
+
+        .error-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ff6b6b;
+            font-size: 18px;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main #share {
+            text-align: center;
+            margin: 24px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .main .alert {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: none;
+            margin-top: 20px;
+        }
+
+        .main p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .main .alert a {
+            color: #0e90d2;
+            text-decoration: none;
             font-weight: 500;
         }
-        
-        /* 页脚 */
-        footer {
-            background-color: #2c3e50;
+
+        .main .alert a:hover {
+            text-decoration: underline;
+        }
+
+        .main h2 {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .recent-links {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .recent-links h3 {
+            margin-top: 0;
+            color: #0e90d2;
+            font-size: 16px;
+        }
+
+        .recent-link {
+            display: inline-block;
+            background: #e9f7fe;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .recent-link:hover {
+            background: #0e90d2;
             color: white;
-            padding: 60px 0 30px;
         }
-        
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-        
-        .footer-column {
-            flex: 1;
-            min-width: 250px;
-        }
-        
-        .footer-column h3 {
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-            position: relative;
-            padding-bottom: 10px;
-        }
-        
-        .footer-column h3:after {
-            content: '';
-            position: absolute;
-            width: 40px;
-            height: 2px;
-            background-color: #3498db;
-            bottom: 0;
-            left: 0;
-        }
-        
-        .footer-links {
-            list-style: none;
-        }
-        
-        .footer-links li {
-            margin-bottom: 10px;
-        }
-        
-        .footer-links a {
-            color: #bdc3c7;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        
-        .footer-links a:hover {
-            color: #3498db;
-        }
-        
-        .copyright {
+
+        .footer {
             text-align: center;
+            margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            color: #bdc3c7;
-            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            color: #666;
         }
-        
-        /* 动画 */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+
+        .footer a {
+            color: #0e90d2;
+            text-decoration: none;
+            margin: 0 5px;
         }
-        
-        @keyframes fadeUp {
-            from { 
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .about-content, .mission-vision {
-                flex-direction: column;
-            }
-            
-            .page-header h1 {
-                font-size: 2.2rem;
-            }
-            
-            .navbar {
-                flex-direction: column;
-                padding: 15px 0;
-            }
-            
-            .nav-links {
-                margin-top: 15px;
-            }
-            
-            .nav-links li {
-                margin: 0 10px;
-            }
+
+        .footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
+
 <body>
-    <!-- 导航栏 -->
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <a href="#" class="logo">公司名称</a>
-                <ul class="nav-links">
-                    <li><a href="#">首页</a></li>
-                    <li><a href="#">产品</a></li>
-                    <li><a href="#">服务</a></li>
-                    <li><a href="#" style="color: #3498db;">关于我们</a></li>
-                    <li><a href="#">联系我们</a></li>
-                </ul>
-            </nav>
+
+    <header class="hd">
+        <div class="link-list">
+            <a href="/">首页</a>
+            <a href="/about.html">关于</a>
+            <a href="/post">帮助中心</a>
         </div>
     </header>
 
-    <!-- 页面标题 -->
-    <section class="page-header">
-        <div class="container">
-            <h1>关于我们</h1>
-            <p>我们是一家致力于创新与卓越的公司，通过专业团队和先进技术，为客户提供最优质的产品和服务。</p>
+    <div class="main">
+        <h1>m3u8在线播放器</h1>
+
+        <div class="form">
+            <input type="text" id="url" value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" placeholder="请输入m3u8播放地址" autocomplete="off">
+            <button class="play-btn" onclick="play()">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik04IDV2MTRsMTEtN3oiLz48L3N2Zz4=" alt="播放">
+            </button>
         </div>
-    </section>
 
-    <!-- 主要内容 -->
-    <div class="container">
-        <!-- 公司简介 -->
-        <section class="section">
-            <div class="section-title">
-                <h2>公司简介</h2>
-            </div>
-            <div class="about-content">
-                <div class="about-text">
-                    <p>我们成立于2010年，是一家专注于技术创新的企业。多年来，我们始终坚持以客户为中心，以创新为动力，致力于为客户提供最优质的产品和服务。</p>
-                    <p>我们的团队由行业专家和技术精英组成，拥有丰富的经验和专业知识。我们相信，通过持续创新和卓越执行，可以为客户创造真正的价值。</p>
-                    <p>目前，我们的业务已覆盖全国多个省市，服务超过1000家企业客户，获得了业界的高度认可和客户的广泛好评。</p>
-                </div>
-                <div class="about-image">
-                    <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" alt="公司办公环境">
-                </div>
-            </div>
-        </section>
+        <div class="recent-links">
+            <h3>示例链接：</h3>
+            <div class="recent-link" onclick="setUrl('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">示例1 - 标准HLS</div>
+            <div class="recent-link" onclick="setUrl('https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8')">示例2 - Sintel视频</div>
+            <div class="recent-link" onclick="setUrl('https://mnmedias.api.telequebec.tv/m3u8/29880.m3u8')">示例3 - 直播流</div>
+        </div>
 
-        <!-- 使命与愿景 -->
-        <section class="section">
-            <div class="section-title">
-                <h2>使命与愿景</h2>
+        <div class="player-container">
+            <div id="player-container-id" preload="auto" playsinline webkit-playsinline></div>
+            <div class="loading" id="loading">视频加载中，请稍候...</div>
+            <div class="error-message" id="error-message">
+                <div>视频加载失败，请检查链接是否正确</div>
+                <button class="btn btn-primary" onclick="retryPlay()">重试</button>
             </div>
-            <div class="mission-vision">
-                <div class="mission">
-                    <h3>我们的使命</h3>
-                    <p>通过技术创新和卓越服务，为客户创造价值，为员工提供成长平台，为社会做出积极贡献。</p>
-                    <p>我们致力于打造最优质的产品，解决客户的痛点，提升工作效率和生活品质。</p>
-                </div>
-                <div class="vision">
-                    <h3>我们的愿景</h3>
-                    <p>成为行业内最具创新力和影响力的企业，引领行业发展方向，推动技术进步。</p>
-                    <p>我们希望通过不懈努力，在五年内成为国内领先的技术解决方案提供商。</p>
-                </div>
-            </div>
-        </section>
+        </div>
 
-        <!-- 核心价值观 -->
-        <section class="section">
-            <div class="section-title">
-                <h2>核心价值观</h2>
-            </div>
-            <div class="values">
-                <div class="value-item">
-                    <div class="value-icon">✓</div>
-                    <h3>创新</h3>
-                    <p>我们鼓励创新思维，不断探索新技术、新方法，推动产品和服务的持续改进。</p>
-                </div>
-                <div class="value-item">
-                    <div class="value-icon">❤️</div>
-                    <h3>诚信</h3>
-                    <p>我们坚持诚信经营，对客户、员工和合作伙伴始终保持诚实和透明。</p>
-                </div>
-                <div class="value-item">
-                    <div class="value-icon">🤝</div>
-                    <h3>合作</h3>
-                    <p>我们重视团队合作，相信通过协作可以创造更大的价值，实现共赢。</p>
-                </div>
-                <div class="value-item">
-                    <div class="value-icon">🎯</div>
-                    <h3>卓越</h3>
-                    <p>我们追求卓越品质，在每一个细节上都力求完美，为客户提供最佳体验。</p>
-                </div>
-            </div>
-        </section>
+        <div id="share" class="social-share"></div>
 
-        <!-- 团队介绍 -->
-        <section class="section">
-            <div class="section-title">
-                <h2>我们的团队</h2>
-            </div>
-            <div class="team">
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="团队成员">
-                    </div>
-                    <div class="member-info">
-                        <h3>张明</h3>
-                        <div class="position">首席执行官</div>
-                        <p>拥有15年行业经验，曾任职于多家知名科技公司。</p>
-                    </div>
-                </div>
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="团队成员">
-                    </div>
-                    <div class="member-info">
-                        <h3>李雪</h3>
-                        <div class="position">技术总监</div>
-                        <p>资深技术专家，专注于系统架构和产品研发。</p>
-                    </div>
-                </div>
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80" alt="团队成员">
-                    </div>
-                    <div class="member-info">
-                        <h3>王强</h3>
-                        <div class="position">产品经理</div>
-                        <p>负责产品规划和用户体验设计，拥有丰富的项目管理经验。</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <div class="alert alert-success" role="alert">
+            <p><strong>嵌入网站代码：</strong></p>
+            <p>
+            <pre id="embed-code">&lt;iframe src="https://m3u8player.vvocc.com/player.html?url=YOUR_M3U8_URL" width="800" height="450" frameborder="0" allowfullscreen&gt;&lt;/iframe&gt;</pre>
+            </p>
+            <button class="btn btn-sm btn-primary" onclick="copyEmbedCode()">复制嵌入代码</button>
+            
+            <h2>什么是m3u8文件?</h2>
+            <p>
+                文件扩展名为 <a href="https://baike.baidu.com/item/m3u8/65624346" target="_blank">M3U8</a> 的文件是一种 UTF-8 编码的音频播放列表文件。它们是纯文本文件，音频和视频播放器都可以用它们来描述媒体文件的位置。
+            </p>
+            <p>
+                例如，一个 M3U8 文件可能会提供互联网电台的在线文件参考。另一个文件可能是在你的电脑上创建的，用于为你的个人音乐或一系列视频建立播放列表。
+            </p>
+            <p>
+                无论哪种方式，效果都是一样的：你可以打开文件，快速轻松地开始播放播放列表指向的内容。如果你发现自己想反复听同一首歌，你可以制作一个 M3U8 文件，作为在媒体播放器中播放这些特定曲目的快捷方式。
+            </p>
+            <p>
+                文件可以使用绝对路径、相对路径和 URL 来指向特定的媒体文件和/或媒体文件的整个文件夹。文件中的其他信息可能是描述文件内容的注释。
+            </p>
+            <p>
+                M3U8是一种播放多媒体列表的文件格式，它的设计初衷是为了播放音频文件，比如MP3，但是越来越多的软件现在用来播放视频文件列表，M3U8也可以指定在线流媒体音频源。很多<a href="https://m3u8player.vvocc.com">播放器</a>和软件都支持M3U8文件格式。
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>
+                "If something is important enough, even if the odds are against you, you should still do it."
+                <br />如果一件事情对你很重要，即使成功的概率很小，你也应该去做 —— <strong>埃隆马斯克</strong>
+            </p>
+            <p>
+                <span style="font-size: 14px;">资源来源于网络，如有侵权，请联系客服予以删除！客服Email: admin@136401.xyz</span>
+            </p>
+            <p>
+                <span style="font-size: 14px;">© 2019 - 2025 </span>
+            </p>
+            <p>友情链接：
+                <a href="https://csdn.net" target="_blank">CSDN</a>  | 
+                <a href="https://cnblogs.com" target="_blank">博客园</a> | 
+                <a href="https://zaixianps.net/" target="_blank">在线ps</a> | 
+                <a href="https://gitapp.cn" target="_blank">程序设计网</a> | 
+                <a href="https://m3u8player.vvocc.com/">m3u8播放器</a>
+            </p>
+        </div>
     </div>
 
-    <!-- 页脚 -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3>关于我们</h3>
-                    <p>我们是一家致力于创新与卓越的公司，通过专业团队和先进技术，为客户提供最优质的产品和服务。</p>
-                </div>
-                <div class="footer-column">
-                    <h3>快速链接</h3>
-                    <ul class="footer-links">
-                        <li><a href="#">首页</a></li>
-                        <li><a href="#">产品</a></li>
-                        <li><a href="#">服务</a></li>
-                        <li><a href="#">关于我们</a></li>
-                        <li><a href="#">联系我们</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h3>联系我们</h3>
-                    <ul class="footer-links">
-                        <li>地址：北京市朝阳区xxx街道xxx号</li>
-                        <li>电话：010-12345678</li>
-                        <li>邮箱：contact@company.com</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2023 公司名称 版权所有</p>
-            </div>
-        </div>
-    </footer>
-
     <script>
-        // 简单的滚动动画效果
-        document.addEventListener('DOMContentLoaded', function() {
-            const sections = document.querySelectorAll('.section');
+        var player = undefined;
+        var currentUrl = '';
+
+        // 页面加载完成后初始化
+        $(document).ready(function() {
+            // 检查URL参数中是否有播放地址
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlFromParam = urlParams.get('url');
+            if (urlFromParam) {
+                $('#url').val(urlFromParam);
+                play();
+            }
             
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, { threshold: 0.1 });
+            // 更新嵌入代码
+            updateEmbedCode();
             
-            sections.forEach(section => {
-                observer.observe(section);
+            // 绑定回车键事件
+            $('#url').keypress(function(e) {
+                if (e.which === 13) {
+                    play();
+                }
             });
         });
+
+        function setUrl(url) {
+            $('#url').val(url);
+            play();
+        }
+
+        function play() {
+            let url = $("#url").val().trim();
+            
+            if (!url) {
+                alert('请输入m3u8播放地址');
+                return;
+            }
+            
+            // 显示加载状态
+            showLoading();
+            hideError();
+            
+            currentUrl = url;
+            
+            // 更新嵌入代码
+            updateEmbedCode();
+            
+            // 保存到最近播放（简单实现）
+            saveToRecent(url);
+            
+            if (player === undefined) {
+                try {
+                    player = TCPlayer('player-container-id', {
+                        sources: [{
+                            src: url,
+                        }],
+                        autoplay: true,
+                        live: true,
+                        controls: true,
+                        playbackRates: [0.5, 1, 1.25, 1.5, 2],
+                        // licenseUrl需自己去腾讯云申请
+                        licenseUrl: 'https://1316732474.trtcube-license.cn/license/v2/1316732474_1/v_cube.license',
+                    });
+                    
+                    // 监听播放器事件
+                    player.on('loadstart', function() {
+                        console.log('开始加载视频');
+                    });
+                    
+                    player.on('canplay', function() {
+                        hideLoading();
+                        console.log('可以播放视频');
+                    });
+                    
+                    player.on('error', function(error) {
+                        hideLoading();
+                        showError();
+                        console.error('播放器错误:', error);
+                    });
+                    
+                } catch (error) {
+                    hideLoading();
+                    showError();
+                    console.error('播放器初始化错误:', error);
+                }
+            } else {
+                // 如果播放器已存在，更换源
+                try {
+                    player.pause();
+                    player.src(url);
+                    player.play().catch(function(error) {
+                        console.log('自动播放被阻止:', error);
+                    });
+                } catch (error) {
+                    hideLoading();
+                    showError();
+                    console.error('更换播放源错误:', error);
+                }
+            }
+        }
+
+        function showLoading() {
+            $('#loading').show();
+        }
+
+        function hideLoading() {
+            $('#loading').hide();
+        }
+
+        function showError() {
+            $('#error-message').show();
+        }
+
+        function hideError() {
+            $('#error-message').hide();
+        }
+
+        function retryPlay() {
+            hideError();
+            play();
+        }
+
+        function updateEmbedCode() {
+            const embedUrl = encodeURIComponent(currentUrl || $('#url').val());
+            const embedCode = `<iframe src="https://m3u8player.vvocc.com/player.html?url=${embedUrl}" width="800" height="450" frameborder="0" allowfullscreen></iframe>`;
+            $('#embed-code').text(embedCode);
+        }
+
+        function copyEmbedCode() {
+            const embedCode = $('#embed-code').text();
+            navigator.clipboard.writeText(embedCode).then(function() {
+                alert('嵌入代码已复制到剪贴板');
+            }, function(err) {
+                console.error('复制失败: ', err);
+                // 降级方案
+                const textArea = document.createElement("textarea");
+                textArea.value = embedCode;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textArea);
+                alert('嵌入代码已复制到剪贴板');
+            });
+        }
+
+        function saveToRecent(url) {
+            // 简单的本地存储实现
+            let recentLinks = JSON.parse(localStorage.getItem('m3u8RecentLinks') || '[]');
+            
+            // 如果已存在，先移除
+            recentLinks = recentLinks.filter(link => link !== url);
+            
+            // 添加到开头
+            recentLinks.unshift(url);
+            
+            // 只保留最近5个
+            if (recentLinks.length > 5) {
+                recentLinks = recentLinks.slice(0, 5);
+            }
+            
+            localStorage.setItem('m3u8RecentLinks', JSON.stringify(recentLinks));
+            
+            // 更新显示（这里简化处理，实际可以动态生成列表）
+        }
     </script>
+
 </body>
+
 </html>
