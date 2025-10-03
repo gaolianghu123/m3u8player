@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <!-- 预加载 WASM 和 Worker JS -->
+    <!-- 预加载 WASM -->
     <link rel="preload" href="./ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
-    <link rel="preload" href="./814.ffmpeg.js" as="script" crossorigin="anonymous">
     <script src="./ffmpeg.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -21,7 +20,7 @@
 </head>
 <body>
     <h1>M3U8 转 MP4 在线转换器</h1>
-    <p>输入 M3U8 URL（确保支持 CORS），点击转换。首次加载 FFmpeg 可能需 10-30s。</p>
+    <p>输入 M3U8 URL（确保支持 CORS），点击转换。首次加载 FFmpeg 可能需 10-30s（单线程模式）。</p>
     <input type="url" id="m3u8Url" placeholder="例如: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" required>
     <br><br>
     <button id="convertBtn">开始转换</button>
@@ -40,23 +39,22 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 加载 FFmpeg（指定 worker814URL，避免动态 404/MIME 错误）
+        // 加载 FFmpeg（纯单线程模式，禁用 Worker）
         async function loadFFmpeg() {
-            if (ffmpeg) return ffmpeg;  // 已加载，返回实例
+            if (ffmpeg) return ffmpeg;
 
             statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
             try {
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true, 
-                    workerPath: null  // 禁用默认 Worker 路径
+                    mainName: 'main'  // 强制单线程入口，完全禁用 Worker/动态脚本
                 });
                 await Promise.race([
                     ffmpeg.load({
                         coreURL: './ffmpeg-core.js',
-                        wasmURL: './ffmpeg-core.wasm',
-                        workerURL: null,  // 禁用标准 Worker
-                        worker814URL: './814.ffmpeg.js'  // 指定动态 Worker 脚本路径（自托管）
+                        wasmURL: './ffmpeg-core.wasm'
+                        // 无 workerURL：单线程模式
                     }),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）')), 30000))
                 ]);
@@ -65,7 +63,7 @@
             } catch (error) {
                 console.error('FFmpeg 加载失败:', error);
                 statusEl.textContent = `加载失败: ${error.message} - 检查控制台日志`;
-                ffmpeg = null;  // 重置，允许重试
+                ffmpeg = null;
                 throw error;
             }
         }
