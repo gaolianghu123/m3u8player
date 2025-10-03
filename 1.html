@@ -39,20 +39,24 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 加载 FFmpeg（新 API，带日志）
+        // 加载 FFmpeg（新 API，带日志，并禁用 Worker）
         async function loadFFmpeg() {
             if (ffmpeg) return ffmpeg;  // 已加载，返回实例
 
             statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
             try {
                 const { createFFmpeg, fetchFile } = FFmpeg;
-                ffmpeg = createFFmpeg({ log: true });  // 启用日志，输出到控制台
+                ffmpeg = createFFmpeg({ 
+                    log: true, 
+                    workerPath: null  // 禁用 Worker，避免动态脚本如 814.ffmpeg.js
+                });
                 await Promise.race([
                     ffmpeg.load({
                         coreURL: './ffmpeg-core.js',
-                        wasmURL: './ffmpeg-core.wasm'
+                        wasmURL: './ffmpeg-core.wasm',
+                        workerURL: null  // 显式禁用 Worker URL
                     }),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）') ), 30000))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）')), 30000))
                 ]);
                 statusEl.textContent = 'FFmpeg 加载完成！';
                 return ffmpeg;
