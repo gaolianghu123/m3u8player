@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <!-- 预加载 WASM -->
-    <link rel="preload" href="./ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
-    <script src="./ffmpeg.js"></script>
+    <!-- 预加载 WASM，通过代理 -->
+    <link rel="preload" href="/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>  <!-- 主库用 CDN，CORS 友好 -->
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -20,7 +20,7 @@
 </head>
 <body>
     <h1>M3U8 转 MP4 在线转换器</h1>
-    <p>输入 M3U8 URL（确保支持 CORS），点击转换。首次加载 FFmpeg 可能需 10-30s（单线程模式）。</p>
+    <p>输入 M3U8 URL（确保支持 CORS），点击转换。首次加载 FFmpeg 可能需 10-30s。</p>
     <input type="url" id="m3u8Url" placeholder="例如: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" required>
     <br><br>
     <button id="convertBtn">开始转换</button>
@@ -31,7 +31,7 @@
     <a id="downloadLink" style="display: none;">下载 MP4 文件</a>
 
     <script>
-        let ffmpeg = null;  // 单实例，避免重复加载
+        let ffmpeg = null;
         const statusEl = document.getElementById('status');
         const convertBtn = document.getElementById('convertBtn');
         const downloadLink = document.getElementById('downloadLink');
@@ -39,7 +39,6 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 加载 FFmpeg（纯单线程模式，禁用 Worker）
         async function loadFFmpeg() {
             if (ffmpeg) return ffmpeg;
 
@@ -48,13 +47,12 @@
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true, 
-                    mainName: 'main'  // 强制单线程入口，完全禁用 Worker/动态脚本
+                    mainName: 'main'  // 单线程模式
                 });
                 await Promise.race([
                     ffmpeg.load({
-                        coreURL: './ffmpeg-core.js',
-                        wasmURL: './ffmpeg-core.wasm'
-                        // 无 workerURL：单线程模式
+                        coreURL: '/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',  // 通过代理
+                        wasmURL: '/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'   // 通过代理
                     }),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）')), 30000))
                 ]);
@@ -81,11 +79,9 @@
             downloadLink.style.display = 'none';
 
             try {
-                // 加载 FFmpeg
                 await loadFFmpeg();
                 statusEl.textContent = '下载视频流...';
 
-                // 下载 M3U8
                 const response = await fetch(m3u8Url);
                 if (!response.ok) {
                     throw new Error(`HTTP 错误: ${response.status} - 检查 URL 是否有效`);
@@ -93,11 +89,9 @@
                 const data = await response.arrayBuffer();
                 await ffmpeg.FS('writeFile', 'input.m3u8', await fetchFile(new Uint8Array(data)));
 
-                // 执行转换
                 statusEl.textContent = '转换中...';
                 await ffmpeg.run(['-i', 'input.m3u8', '-c', 'copy', '-bsf:a', 'aac_adtstoasc', 'output.mp4']);
 
-                // 读取输出
                 const fileData = await ffmpeg.FS('readFile', 'output.mp4');
                 const blob = new Blob([fileData.buffer], { type: 'video/mp4' });
                 const url = URL.createObjectURL(blob);
