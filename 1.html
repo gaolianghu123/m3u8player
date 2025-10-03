@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+    <script src="./ffmpeg.js"></script>  <!-- 本地引入 -->
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -57,10 +57,11 @@
             downloadLink.style.display = 'none';
 
             try {
-                // 加载 FFmpeg（使用稳定 CDN）
+                // 加载 FFmpeg（本地文件，避免 CORS）
                 await ffmpeg.load({
-                    coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-                    wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+                    coreURL: './ffmpeg-core.js',
+                    wasmURL: './ffmpeg-core.wasm',
+                    workerURL: './ffmpeg-core.worker.js'  // 指定本地 Worker
                 });
                 statusEl.textContent = '下载视频流...';
 
