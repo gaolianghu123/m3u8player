@@ -57,11 +57,11 @@
             downloadLink.style.display = 'none';
 
             try {
-                // 加载 FFmpeg（本地文件，避免 CORS）
+                // 加载 FFmpeg（本地文件，避免 CORS；使用 core-mt 支持 worker）
                 await ffmpeg.load({
                     coreURL: './ffmpeg-core.js',
                     wasmURL: './ffmpeg-core.wasm',
-                    workerURL: './ffmpeg-core.worker.js'  // 指定本地 Worker
+                    workerURL: './ffmpeg-core.worker.js'  // 现在可用
                 });
                 statusEl.textContent = '下载视频流...';
 
