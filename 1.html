@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <!-- 预加载 WASM，针对 Cloudflare Pages 优化 -->
+    <!-- 预加载 WASM 和 Worker JS -->
     <link rel="preload" href="./ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
+    <link rel="preload" href="./814.ffmpeg.js" as="script" crossorigin="anonymous">
     <script src="./ffmpeg.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -39,7 +40,7 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 加载 FFmpeg（新 API，带日志，并禁用 Worker）
+        // 加载 FFmpeg（指定 worker814URL，避免动态 404/MIME 错误）
         async function loadFFmpeg() {
             if (ffmpeg) return ffmpeg;  // 已加载，返回实例
 
@@ -48,13 +49,14 @@
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true, 
-                    workerPath: null  // 禁用 Worker，避免动态脚本如 814.ffmpeg.js
+                    workerPath: null  // 禁用默认 Worker 路径
                 });
                 await Promise.race([
                     ffmpeg.load({
                         coreURL: './ffmpeg-core.js',
                         wasmURL: './ffmpeg-core.wasm',
-                        workerURL: null  // 显式禁用 Worker URL
+                        workerURL: null,  // 禁用标准 Worker
+                        worker814URL: './814.ffmpeg.js'  // 指定动态 Worker 脚本路径（自托管）
                     }),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）')), 30000))
                 ]);
