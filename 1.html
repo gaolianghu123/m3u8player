@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <!-- 预加载所有资源，通过代理 -->
-    <link rel="preload" href="/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
-    <link rel="preload" href="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" as="script" crossorigin="anonymous">
-    <script src="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" crossorigin="anonymous"></script>  <!-- 加 crossorigin -->
+    <!-- 预加载资源（加 /1 前缀） -->
+    <link rel="preload" href="/1/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm" as="fetch" type="application/wasm">
+    <link rel="preload" href="/1/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" as="script">
+    <script src="/1/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -40,18 +40,21 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 检查 FFmpeg 是否加载（延长超时到 10s）
+        // 检查 FFmpeg 是否加载（15s 超时，调试日志）
         function waitForFFmpeg() {
             return new Promise((resolve, reject) => {
-                const maxAttempts = 100;  // 10s 超时（100ms * 100）
+                const maxAttempts = 150;  // 15s
                 let attempts = 0;
                 const interval = setInterval(() => {
                     attempts++;
+                    console.log(`等待 FFmpeg... 尝试 ${attempts}`);
                     if (typeof FFmpeg !== 'undefined') {
                         clearInterval(interval);
+                        console.log('FFmpeg 加载成功！');
                         resolve(FFmpeg);
                     } else if (attempts >= maxAttempts) {
                         clearInterval(interval);
+                        console.error('FFmpeg 超时 - 检查 Network /1/wasm/ 请求');
                         reject(new Error('FFmpeg 脚本加载失败 - 检查网络或代理'));
                     }
                 }, 100);
@@ -62,19 +65,18 @@
             if (ffmpeg) return ffmpeg;
 
             try {
-                // 等待 FFmpeg 定义
                 const FFmpegLib = await waitForFFmpeg();
                 const { createFFmpeg, fetchFile } = FFmpegLib;
 
                 statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
                 ffmpeg = createFFmpeg({ 
                     log: true, 
-                    mainName: 'main'  // 单线程模式
+                    mainName: 'main'  // 单线程
                 });
                 await Promise.race([
                     ffmpeg.load({
-                        coreURL: '/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',  // 通过代理
-                        wasmURL: '/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'   // 通过代理
+                        coreURL: '/1/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',  // 加 /1
+                        wasmURL: '/1/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'   // 加 /1
                     }),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）')), 30000))
                 ]);
