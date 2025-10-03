@@ -7,7 +7,7 @@
     <!-- 预加载所有资源，通过代理 -->
     <link rel="preload" href="/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
     <link rel="preload" href="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" as="script" crossorigin="anonymous">
-    <script src="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>  <!-- 主库通过代理 -->
+    <script src="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" crossorigin="anonymous"></script>  <!-- 加 crossorigin -->
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -40,10 +40,10 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // 检查 FFmpeg 是否加载（延迟执行，避免脚本未就绪）
+        // 检查 FFmpeg 是否加载（延长超时到 10s）
         function waitForFFmpeg() {
             return new Promise((resolve, reject) => {
-                const maxAttempts = 50;  // 5s 超时（100ms * 50）
+                const maxAttempts = 100;  // 10s 超时（100ms * 100）
                 let attempts = 0;
                 const interval = setInterval(() => {
                     attempts++;
