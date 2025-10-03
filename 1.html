@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <!-- 预加载 WASM，通过代理 -->
+    <!-- 预加载所有资源，通过代理 -->
     <link rel="preload" href="/wasm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>  <!-- 主库用 CDN，CORS 友好 -->
+    <link rel="preload" href="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js" as="script" crossorigin="anonymous">
+    <script src="/wasm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>  <!-- 主库通过代理 -->
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -39,12 +40,33 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
+        // 检查 FFmpeg 是否加载（延迟执行，避免脚本未就绪）
+        function waitForFFmpeg() {
+            return new Promise((resolve, reject) => {
+                const maxAttempts = 50;  // 5s 超时（100ms * 50）
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (typeof FFmpeg !== 'undefined') {
+                        clearInterval(interval);
+                        resolve(FFmpeg);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(interval);
+                        reject(new Error('FFmpeg 脚本加载失败 - 检查网络或代理'));
+                    }
+                }, 100);
+            });
+        }
+
         async function loadFFmpeg() {
             if (ffmpeg) return ffmpeg;
 
-            statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
             try {
-                const { createFFmpeg, fetchFile } = FFmpeg;
+                // 等待 FFmpeg 定义
+                const FFmpegLib = await waitForFFmpeg();
+                const { createFFmpeg, fetchFile } = FFmpegLib;
+
+                statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
                 ffmpeg = createFFmpeg({ 
                     log: true, 
                     mainName: 'main'  // 单线程模式
