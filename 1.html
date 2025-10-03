@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M3U8 转 MP4 在线转换器</title>
-    <script src="./ffmpeg.js"></script>  <!-- 本地引入 -->
+    <!-- 预加载 WASM，针对 Cloudflare Pages 优化 -->
+    <link rel="preload" href="./ffmpeg-core.wasm" as="fetch" type="application/wasm" crossorigin="anonymous">
+    <script src="./ffmpeg.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
@@ -18,7 +20,7 @@
 </head>
 <body>
     <h1>M3U8 转 MP4 在线转换器</h1>
-    <p>输入 M3U8 URL（确保支持 CORS），点击转换。转换后可下载 MP4 文件。</p>
+    <p>输入 M3U8 URL（确保支持 CORS），点击转换。首次加载 FFmpeg 可能需 10-30s。</p>
     <input type="url" id="m3u8Url" placeholder="例如: https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" required>
     <br><br>
     <button id="convertBtn">开始转换</button>
@@ -29,8 +31,7 @@
     <a id="downloadLink" style="display: none;">下载 MP4 文件</a>
 
     <script>
-        const { FFmpeg } = FFmpegWASM;
-        const ffmpeg = new FFmpeg();
+        let ffmpeg = null;  // 单实例，避免重复加载
         const statusEl = document.getElementById('status');
         const convertBtn = document.getElementById('convertBtn');
         const downloadLink = document.getElementById('downloadLink');
@@ -38,10 +39,30 @@
         const progressEl = document.getElementById('progress');
         const progressBarEl = document.getElementById('progress-bar');
 
-        // FFmpeg 进度监听（简化版）
-        ffmpeg.on('progress', ({ progress }) => {
-            progressBarEl.style.width = `${progress * 100}%`;
-        });
+        // 加载 FFmpeg（新 API，带日志）
+        async function loadFFmpeg() {
+            if (ffmpeg) return ffmpeg;  // 已加载，返回实例
+
+            statusEl.textContent = '正在初始化 FFmpeg WASM（可能需 10-30s）...';
+            try {
+                const { createFFmpeg, fetchFile } = FFmpeg;
+                ffmpeg = createFFmpeg({ log: true });  // 启用日志，输出到控制台
+                await Promise.race([
+                    ffmpeg.load({
+                        coreURL: './ffmpeg-core.js',
+                        wasmURL: './ffmpeg-core.wasm'
+                    }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('加载超时（30s）') ), 30000))
+                ]);
+                statusEl.textContent = 'FFmpeg 加载完成！';
+                return ffmpeg;
+            } catch (error) {
+                console.error('FFmpeg 加载失败:', error);
+                statusEl.textContent = `加载失败: ${error.message} - 检查控制台日志`;
+                ffmpeg = null;  // 重置，允许重试
+                throw error;
+            }
+        }
 
         convertBtn.addEventListener('click', async () => {
             const m3u8Url = m3u8UrlEl.value.trim();
@@ -50,35 +71,30 @@
                 return;
             }
 
-            statusEl.textContent = '加载 FFmpeg...';
             convertBtn.disabled = true;
             progressEl.style.display = 'block';
             progressBarEl.style.width = '0%';
             downloadLink.style.display = 'none';
 
             try {
-                // 加载 FFmpeg（单线程配置，无 worker，避免 SAB 问题）
-                await ffmpeg.load({
-                    coreURL: './ffmpeg-core.js',
-                    wasmURL: './ffmpeg-core.wasm'
-                    // 无 workerURL：单线程模式
-                });
+                // 加载 FFmpeg
+                await loadFFmpeg();
                 statusEl.textContent = '下载视频流...';
 
-                // 下载 M3U8（处理 CORS）
+                // 下载 M3U8
                 const response = await fetch(m3u8Url);
                 if (!response.ok) {
                     throw new Error(`HTTP 错误: ${response.status} - 检查 URL 是否有效`);
                 }
                 const data = await response.arrayBuffer();
-                await ffmpeg.writeFile('input.m3u8', new Uint8Array(data));
+                await ffmpeg.FS('writeFile', 'input.m3u8', await fetchFile(new Uint8Array(data)));
 
-                // 执行转换（快速复制模式）
+                // 执行转换
                 statusEl.textContent = '转换中...';
-                await ffmpeg.exec(['-i', 'input.m3u8', '-c', 'copy', '-bsf:a', 'aac_adtstoasc', 'output.mp4']);
+                await ffmpeg.run(['-i', 'input.m3u8', '-c', 'copy', '-bsf:a', 'aac_adtstoasc', 'output.mp4']);
 
-                // 读取并创建下载
-                const fileData = await ffmpeg.readFile('output.mp4');
+                // 读取输出
+                const fileData = await ffmpeg.FS('readFile', 'output.mp4');
                 const blob = new Blob([fileData.buffer], { type: 'video/mp4' });
                 const url = URL.createObjectURL(blob);
 
@@ -94,8 +110,6 @@
                     errorMsg += ' - 尝试使用支持 CORS 的代理或检查源站设置。';
                 } else if (errorMsg.includes('fetch')) {
                     errorMsg += ' - 检查网络连接或 URL 访问权限。';
-                } else if (errorMsg.includes('SharedArrayBuffer')) {
-                    errorMsg += ' - 浏览器不支持或需启用跨域隔离。';
                 }
                 statusEl.textContent = `转换失败: ${errorMsg}`;
                 console.error(error);
