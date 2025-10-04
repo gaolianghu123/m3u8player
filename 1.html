@@ -1,242 +1,659 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
-
 <head>
-    <title>m3u8播放器</title>
+    <title>m3u8在线播放器 - 专业的在线视频播放解决方案</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="M3U8Player播放器，用于m3u8文件的在线播放">
+    <meta name="description" content="专业的m3u8在线播放器,支持HLS流媒体播放,跨平台兼容,无需安装插件">
+    <link rel="icon" href="/images/ic-play.png" type="image/png">
 
     <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
-
     <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-
-    <link rel="stylesheet" href="https://cdn.staticfile.org/social-share.js/1.0.16/css/share.min.css">
-    <script src="https://cdn.staticfile.org/social-share.js/1.0.16/js/social-share.min.js"></script>
-
-    <link href="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.min.css" rel="stylesheet" />
-    <script src="https://web.sdk.qcloud.com/player/tcplayer/release/v5.1.0/tcplayer.v5.1.0.min.js"></script>
-
- 
+    
+    <!-- 添加hls.js库 - 这是播放m3u8的关键 -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
+        :root {
+            --primary-color: #0e90d2;
+            --secondary-color: #667eea;
+            --accent-color: #764ba2;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --border-radius: 16px;
+            --box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            --transition: all 0.3s ease;
+        }
 
-        @media screen and (max-width: 640px){
-            #player-container-id {
-                height: 200px!important;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100vh;
+            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            line-height: 1.6;
+            color: white;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            height: 60px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+        }
+
+        .nav-links a.active {
+            background: rgba(255,255,255,0.2);
+            font-weight: 600;
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .hero-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .hero-features {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+        }
+
+        .feature-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .player-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-bottom: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .player-header {
+            margin-bottom: 25px;
+        }
+
+        .player-title {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .player-description {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e8ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--light-bg);
+            color: var(--text-color);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .play-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .features-section {
+            padding: 80px 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--border-radius);
+            padding: 40px 30px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: rgba(0,0,0,0.2);
+            padding: 60px 20px 30px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-column h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 30px;
+            margin-top: 30px;
+        }
+
+        .footer-disclaimer {
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .footer-copyright {
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                gap: 16px;
+                height: 50px;
+            }
+
+            .nav-links a {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .hero-features {
+                gap: 15px;
+            }
+
+            .feature-badge {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                padding: 30px 20px;
             }
         }
-        
-        html, body{
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
 
-        .hd {
-            width: 100%;
-            height: 50px;
-            background-color: #0e90d2;
-        }
+        @media (max-width: 480px) {
+            .nav-links {
+                gap: 12px;
+            }
 
-        .hd .link-list {
-            padding: 0 16px;
-            height: 50px;
-            width: 100%;
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: row;
-            gap: 24px;
-            align-items: center;
-            align-content: center;
-        }
+            .nav-links a {
+                font-size: 13px;
+                padding: 5px 10px;
+            }
 
-        .hd .link-list a {
-            font-size: 16px;
-            color: #fff;
-            text-decoration: none;
-            cursor: pointer;
-        }
+            .hero-title {
+                font-size: 2rem;
+            }
 
-        .hd .link-list a:hover {
-            font-weight: bold;
-        }
+            .hero-features {
+                flex-direction: column;
+                align-items: center;
+            }
 
-        .main {
-            padding: 16px 16px;
-            width: 100%;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .main h1 {
-            text-align: center;
-            font-size: 30px;
-            color: #0e90d2;
-            font-weight: 800;
-            margin-bottom: 24px;
-        }
-
-        .main .form {
-            width: 100%;
-            display: flex;
-            flex-direction: row;
-            margin-bottom: 24px;
-        }
-
-        .main .form input {
-            flex: 1;
-            height: 40px;
-            border-top: 1px solid #0e90d2;
-            border-left: 1px solid #0e90d2;
-            border-bottom: 1px solid #0e90d2;
-            border-right: 0px;
-            padding-left: 10px;
-        }
-
-        .main .form input:focus {
-            outline: #0e90d2;
-        }
-
-        .main .form img {
-            margin-left: -4px;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-        }
-
-        .main #share {
-            text-align: center;
-            margin-top: 24px;
-            margin-bottom: 24px;
-        }
-
-        .main p {
-            font-size: 15px;
-        }
-
-        .main .alert a {
-            color: #501445;
-            text-decoration: underline;
-        }
-
-        .main h2 {
-            font-size: 16px;
-            font-weight: bold;
+            .player-container {
+                padding: 20px;
+            }
         }
     </style>
-
-
 </head>
 
 <body>
+    <div class="app-container">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-links">
+                    <a href="index.html" class="active">首页</a>
+                    <a href="convert.html">M3U8转MP4</a>
+                    <a href="about.html">关于我们</a>
+                    <a href="help.html">帮助中心</a>
+                </div>
+            </div>
+        </nav>
 
-    <header class="hd">
-        <div class="link-list">
-            <a href="/">首页</a>
-            <a href="/about.html">关于</a>
-        </div>
-    </header>
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">专业的 m3u8 在线播放器</h1>
+                <p class="hero-subtitle">
+                    支持HLS流媒体播放,跨平台兼容,无需安装任何插件<br>
+                    简单、高效、安全的在线视频播放解决方案
+                </p>
+                
+                <div class="hero-features">
+                    <div class="feature-badge">
+                        <span>⚡</span>
+                        <span>快速播放</span>
+                    </div>
+                    <div class="feature-badge">
+                        <span>🔒</span>
+                        <span>隐私安全</span>
+                    </div>
+                    <div class="feature-badge">
+                        <span>🌐</span>
+                        <span>跨平台支持</span>
+                    </div>
+                    <div class="feature-badge">
+                        <span>🎯</span>
+                        <span>简单易用</span>
+                    </div>
+                </div>
 
-    <div class="main">
-        <h1>m3u8在线播放器</h1>
+                <div class="player-container">
+                    <div class="player-header">
+                        <h2 class="player-title">🎬 在线播放器</h2>
+                        <p class="player-description">输入m3u8链接,立即开始播放视频</p>
+                    </div>
 
+                    <div class="input-group">
+                        <input 
+                            type="url" 
+                            class="url-input"
+                            placeholder="https://example.com/video.m3u8"
+                            id="videoUrl"
+                        >
+                    </div>
+                    
+                    <button class="play-btn" id="playBtn">
+                        🎵 立即播放
+                    </button>
 
-        <div class="form">
-            <input type="text" id="url"  value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" placeholder="请输入m3u8播放地址" autocomplete="off">
-            <img src="./images/ic-play.png" onclick="play()"/>
-        </div>
+                    <div style="text-align: center;">
+                        <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                            或者 <a href="convert.html" style="color: var(--secondary-color); text-decoration: none; font-weight: 600;">尝试 M3U8 转 MP4 功能</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
+        <section class="features-section">
+            <div class="section-container">
+                <h2 class="section-title">为什么选择我们的播放器?</h2>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h3>极速播放体验</h3>
+                        <p>基于现代Web技术构建,加载快速,播放流畅,支持智能缓冲和预加载技术</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>100% 隐私安全</h3>
+                        <p>所有操作在浏览器本地完成,视频数据不上传服务器,保护您的隐私安全</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>全平台兼容</h3>
+                        <p>完美支持PC、手机、平板等所有设备,响应式设计自动适配屏幕尺寸</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🎛️</div>
+                        <h3>丰富功能特性</h3>
+                        <p>支持播放控制、画质切换、全屏播放、快捷键操作等完整播放器功能</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🔧</div>
+                        <h3>技术先进</h3>
+                        <p>基于HTML5 Video和MSE技术,支持HLS、MP4等多种视频格式</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">💝</div>
+                        <h3>完全免费</h3>
+                        <p>所有功能完全免费使用,无任何隐藏费用,持续更新维护</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <video id="player-container-id"  preload="auto" playsinline webkit-playsinline style="width: 100%;min-height:200px; background:#000;">
-        </video> 
-
-
-        <div class="alert alert-success" role="alert">
-            <p>
-                嵌入网站:
-            </p>
-            <p>
-            <pre>&lt;iframe src="https://m3u8player.org/player.html?url=https://****index.m3u8"&gt;&lt;/iframe&gt;</pre>
-            </p>
-            <p>
-                M3U8Player 是一款实现 HTTP 实时流客户端的 Chrome 浏览器扩展工具。你可以播放 .m3u8 HTTP Live Streaming (HLS)。它依靠 HTML5
-                视频和媒体源扩展进行播放。它的工作原理是将 MPEG-2 传输流和 AAC/MP3 流转换成 ISO BMFF (MP4) 片段。如果浏览器中有 Web Worker，可使用它异步执行转码。它还支持 HLS
-                + fmp4。
-            </p>
-            <h2>什么是m3u8文件?</h2>
-            <p>
-                文件扩展名为 <a href="https://en.wikipedia.org/wiki/M3U#M3U8">M3U8</a> 的文件是一种 UTF-8 编码的音频播放列表文件。它们是纯文本文件，音频和视频播放器都可以用它们来描述媒体文件的位置。
-            <p>
-                例如，一个 M3U8 文件可能会提供互联网电台的在线文件参考。另一个文件可能是在你的电脑上创建的，用于为你的个人音乐或一系列视频建立播放列表。
-            <p>
-                无论哪种方式，效果都是一样的：你可以打开文件，快速轻松地开始播放播放列表指向的内容。如果你发现自己想反复听同一首歌，你可以制作一个 M3U8 文件，作为在媒体播放器中播放这些特定曲目的快捷方式。
-            <p>
-                文件可以使用绝对路径、相对路径和 URL 来指向特定的媒体文件和/或媒体文件的整个文件夹。文件中的其他信息可能是描述文件内容的注释。
-
-            <p>
-                M3U8是一种播放多媒体列表的文件格式，它的设计初衷是为了播放音频文件，比如MP3，但是越来越多的软件现在用来播放视频文件列表，M3U8也可以指定在线流媒体音频源。很多<a href="http://m3u8player.org">播放器</a>和软件都支持M3U8文件格式。
-            </p>
-
-        </div>
-
-        <p>
-            <span>"If something is important enough, even if the odds are against you, you should still do it."
-                <br />如果一件事情对你很重要，即使成功的概率很小，你也应该去做 —— <strong>埃隆马斯克</strong>
-            </span>
-            <br>
-            <br>
-            <br>
-            <span style="font-size: 14px;">资源来源于网络，如有侵权，请联系客服予以删除！</span>
-            <br>
-
-            <span style="font-size: 14px;">© 2019 - 2025 </span>
- 
-            <p>友情链接：
-                <a href="https://csdn.net">CSDN</a>  | 
-                <a href="https://cnblogs.com">博客园</a> | 
-                <a href="https://zaixianps.net/">在线ps</a> | 
-                <a href="https://gitapp.cn">程序设计网</a> | 
-                <a href="https://m3u8player.org/">m3u8播放器</a>
-            </p>
-        </p>
-
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-grid">
+                    <div class="footer-column">
+                        <h3>快速链接</h3>
+                        <ul class="footer-links">
+                            <li><a href="index.html">首页</a></li>
+                            <li><a href="convert.html">M3U8转MP4</a></li>
+                            <li><a href="about.html">关于我们</a></li>
+                            <li><a href="help.html">帮助中心</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h3>工具服务</h3>
+                        <ul class="footer-links">
+                            <li><a href="convert.html">在线转换器</a></li>
+                            <li><a href="help.html">使用教程</a></li>
+                            <li><a href="help.html#embed-guide">嵌入指南</a></li>
+                            <li><a href="help.html#faq">常见问题</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h3>技术支持</h3>
+                        <ul class="footer-links">
+                            <li><a href="mailto:admin@136401.xyz">客服邮箱</a></li>
+                            <li><a href="help.html">文档中心</a></li>
+                            <li><a href="about.html">技术栈</a></li>
+                            <li><a href="about.html">更新日志</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h3>友情链接</h3>
+                        <ul class="footer-links">
+                            <li><a href="https://csdn.net" target="_blank">CSDN</a></li>
+                            <li><a href="https://cnblogs.com" target="_blank">博客园</a></li>
+                            <li><a href="https://gitapp.cn" target="_blank">程序设计网</a></li>
+                            <li><a href="convert.html">M3U8转换工具</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <div class="footer-disclaimer">
+                        资源来源于网络,如有侵权,请联系客服予以删除!客服邮箱:admin@136401.xyz
+                    </div>
+                    <div class="footer-copyright">
+                        © 2019 - 2025 m3u8在线播放器 | 让视频播放更简单、更高效
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
- 
-
- 
 
     <script>
+        $(document).ready(function() {
+            // 播放按钮点击事件
+            $('#playBtn').on('click', function() {
+                const videoUrl = $('#videoUrl').val().trim();
+                
+                if (!videoUrl) {
+                    alert('请输入有效的m3u8视频链接');
+                    return;
+                }
+                
+                // 创建video元素
+                const video = document.createElement('video');
+                video.id = 'player';
+                video.style.width = '100%';
+                video.style.height = 'auto';
+                video.controls = true;
+                video.style.borderRadius = '12px';
+                
+                // 检查浏览器是否支持HLS
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(videoUrl);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play();
+                    });
+                    hls.on(Hls.Events.ERROR, function(event, data) {
+                        if (data.fatal) {
+                            alert('视频加载失败,请检查链接是否正确或网络是否正常');
+                        }
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Safari浏览器支持原生HLS
+                    video.src = videoUrl;
+                    video.addEventListener('loadedmetadata', function() {
+                        video.play();
+                    });
+                } else {
+                    alert('您的浏览器不支持HLS播放,请使用Chrome、Firefox、Edge或Safari浏览器');
+                    return;
+                }
+                
+                // 在播放器容器中显示视频
+                $('.player-container').html('').append(video);
+            });
 
-        
-        var player = undefined;
+            // 输入框回车键支持
+            $('#videoUrl').on('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    $('#playBtn').click();
+                }
+            });
 
-
-        function play() {
-            
-            let url = $("#url").val()
-
-            if(player === undefined) {
-                player = TCPlayer('player-container-id', {
-                sources: [{
-                    src: url,
-                }],
-                // licenseUrl需自己去腾讯云申请
-                licenseUrl: 'https://1316732474.trtcube-license.cn/license/v2/1316732474_1/v_cube.license',
-            }); 
+            // 添加动画效果
+            function animateOnScroll() {
+                $('.feature-card').each(function() {
+                    const elementTop = $(this).offset().top;
+                    const elementBottom = elementTop + $(this).outerHeight();
+                    const viewportTop = $(window).scrollTop();
+                    const viewportBottom = viewportTop + $(window).height();
+                    
+                    if (elementBottom > viewportTop && elementTop < viewportBottom) {
+                        $(this).addClass('animate__animated animate__fadeInUp');
+                    }
+                });
             }
 
+            setTimeout(() => {
+                $('.feature-card').addClass('animate__animated animate__fadeInUp');
+            }, 100);
 
-            player.pause();
-            console.log(url)
-            player.src(url); // url 播放地址
-        }
-
+            $(window).on('scroll', animateOnScroll);
+            
+            // 添加示例m3u8链接
+            const exampleLinks = [
+                'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+                'https://multiplatform-f.akamaihd.net/i/multi/will/bunny/big_buck_bunny_,640x360_400,640x360_700,640x360_1000,950x540_1500,.f4v.csmil/master.m3u8'
+            ];
+            
+            $('#videoUrl').val(exampleLinks[0]);
+        });
     </script>
-
 </body>
-
 </html>
