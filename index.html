@@ -182,10 +182,11 @@
 
         .input-group {
             margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
         }
 
         .url-input {
-            width: 100%;
             padding: 16px 20px;
             border: 2px solid #e8ecef;
             border-radius: 12px;
@@ -193,6 +194,10 @@
             transition: var(--transition);
             background: var(--light-bg);
             color: var(--text-color);
+            /* 修改：设置与按钮相同的宽度 */
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
         }
 
         .url-input:focus {
@@ -203,7 +208,6 @@
         }
 
         .play-btn {
-            width: 100%;
             padding: 16px;
             background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
             color: white;
@@ -214,6 +218,10 @@
             cursor: pointer;
             transition: var(--transition);
             margin-bottom: 20px;
+            /* 修改：设置与输入框相同的宽度 */
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
         }
 
         .play-btn:hover {
